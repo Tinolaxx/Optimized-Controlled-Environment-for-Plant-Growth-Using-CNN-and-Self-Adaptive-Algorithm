@@ -1,0 +1,90 @@
+import matplotlib.pyplot as plt
+import time
+import RPi.GPIO as GPIO
+import os
+from as7263 import AS7263
+from datetime import datetime  
+
+as7263 = AS7263() # Initialize AS7263 sensor
+as7263.set_gain(16)
+as7263.set_integration_time(17.857)
+as7263.set_measurement_mode(2)
+as7263.set_illumination_led(1)
+
+GPIO.setmode(GPIO.BOARD) # Set up GPIO
+
+plt.ion() # Live plot setup
+fig, ax = plt.subplots()
+ax.set_xlabel("Time")
+ax.set_ylabel("Spectral Values")
+ax.set_title("Live Spectral Readings (AS7263)")
+ax.set_ylim(0, 1000)
+
+colors = ['r', '#FFA500', 'b', 'm', '#006400', 'c'] # Line placeholders for each sensor value
+labels = ['R', 'S', 'T', 'U', 'V', 'W']
+
+lines = [ax.plot([], [], color=colors[i], label=labels[i])[0] for i in range(6)]
+ax.legend()
+
+# Data storage
+spectral_history = [[] for _ in range(6)]
+timestamps = []
+
+# Ensure CSV file exists and has a header
+if not os.path.exists("NDVI.csv"):
+    with open("NDVI.csv", "w") as file:
+        file.write("Timestamp, R, S, T, U, V, W, NDVI\n")
+
+try:
+    print("Initializing Spectrometry...\n")
+    while True:
+        values = as7263.get_calibrated_values()
+        R, S, T, U, V, W = values
+
+          # Store new values
+        for i, val in enumerate([R, S, T, U, V, W]):
+            spectral_history[i].append(val)
+            if len(spectral_history[i]) > 50:
+                spectral_history[i].pop(0)  # Keep last 50 readings
+        
+        timestamps.append(time.time())
+        if len(timestamps) > 50:
+            timestamps.pop(0)
+        
+        # Update the plot
+        for i, line in enumerate(lines):
+            line.set_xdata(range(len(spectral_history[i])))
+            line.set_ydata(spectral_history[i])
+        
+        ax.set_xlim(max(0, len(timestamps) - 50), max(50, len(timestamps)))
+        fig.canvas.flush_events()
+
+        NDVI = ((V - S) / (V + S)) if (V + S) != 0 else 0
+        if NDVI > 0:
+            print(f"Red Light (S) = {S:.3f}")
+            print(f"Near-Infrared (V) = {V:.3f}")
+            print(f"NDVI Value = {NDVI:.2f}")
+
+            # Get the current timestamp
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # Append data to CSV file with labels
+            try:
+                with open("NDVI.csv", "a") as file:
+                    file.write(f"{timestamp}, R={R:.3f}, S={S:.3f}, T={T:.3f}, U={U:.3f}, V={V:.3f}, W={W:.3f}, NDVI={NDVI:.3f}\n")
+            except Exception as e:
+                print(f"Error writing to file: {e}")
+
+            # Classification
+            if 0.2 < NDVI < 0.65:
+                print("HEALTHY\n")
+            else:
+                print("UNHEALTHY\n")
+            
+        time.sleep(3)
+
+except KeyboardInterrupt:
+    as7263.set_measurement_mode(3)
+    as7263.set_illumination_led(0)
+    GPIO.cleanup()  # Cleanup GPIO before exiting
+    print("Program terminated.")
