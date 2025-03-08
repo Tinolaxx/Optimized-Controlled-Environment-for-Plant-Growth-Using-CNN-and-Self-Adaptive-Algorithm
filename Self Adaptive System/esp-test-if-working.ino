@@ -1,9 +1,9 @@
 #include <SoftwareSerial.h>
 #define RX 2 // TX of esp8266 in connected with Arduino pin 2
 #define TX 3 // RX of esp8266 in connected with Arduino pin 3
-String WIFI_SSID = "PLDTHOMEFIBRfece0";// WIFI NAME
-String WIFI_PASS = "PLDTWIFIN0Mys"; // WIFI PASSWORD
-String API = "HBQV1IKTKW29F7TG";// Write API KEY
+String WIFI_SSID = "";// WIFI NAME
+String WIFI_PASS = ""; // WIFI PASSWORD
+String API = "";// Write API KEY
 String HOST = "api.thingspeak.com";
 String PORT = "80";
 int countTrueCommand;
