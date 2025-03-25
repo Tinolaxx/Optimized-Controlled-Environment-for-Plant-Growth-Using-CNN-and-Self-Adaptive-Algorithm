@@ -1,0 +1,22 @@
+Vin: 9V
+- Peristaltic Pumps
+- 12V Fan
+
+5V:
+- DHT11
+- I2C LCD Display
+
+3.3V:
+- ESP8266 Wifi Module
+- Capacitive Soil Moisture Sensor
+
+Peristaltic Pump:
+VCC = Connect to NC of Relay
+GND = Connect to GND of Arduino and Power Supply
+
+NOTE:
+- Do not plug in ESP8266 or Soil Moisture Sensor in 5V or higher.
+- Vin should be 9V only.
+- PCB was originally used in the design.
+- Vin is different from 5V. Do not put it in the same pins.
+- GND of power supply can be mixed with GND of Arduino.
